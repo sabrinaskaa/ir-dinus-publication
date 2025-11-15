@@ -1,17 +1,17 @@
-streamlit==1.32.0
+streamlit
 
 # NLP tools
-nltk==3.8.1
-Sastrawi==1.0.1
+nltk
+Sastrawi
 
 # Machine learning & IR
-scikit-learn==1.4.0
-numpy==1.26.4
-scipy==1.12.0
+scikit-learn
+numpy
+scipy
 
 # Visualization
-matplotlib==3.8.2
+matplotlib
 
-# Utils
-pandas==2.2.1
-tqdm==4.66.1
+# Utils (kalau dipakai di project)
+pandas
+tqdm
