@@ -1,0 +1,36 @@
+{
+  "analisis sentimen ulasan aplikasi dan media sosial dengan machine learning": [
+    "113794790.techno.com.txt",
+    "126565308.techno.com.txt",
+    "127935337.techno.com.txt",
+    "128735492.techno.com.txt",
+    "135035525.techno.com.txt"
+  ],
+  "klasifikasi citra menggunakan convolutional neural network cnn": [
+    "110724704.techno.com.txt",
+    "113554791.techno.com.txt",
+    "136135519.techno.com.txt",
+    "97354334.techno.com.txt"
+  ],
+  "deteksi objek dengan arsitektur yolo dan deep learning": [
+    "137745514.techno.com.txt",
+    "98894514.techno.com.txt"
+  ],
+  "klasifikasi penyakit dan masalah kesehatan menggunakan machine learning": [
+    "100614520.techno.com.txt",
+    "97794326.techno.com.txt"
+  ],
+  "klasifikasi kerusakan dan kondisi fisik menggunakan knn svm dan decision tree": [
+    "88974145.techno.com.txt",
+    "129555493.techno.com.txt",
+    "96804333.techno.com.txt",
+    "137485529.techno.com.txt"
+  ],
+  "prediksi prestasi akademik dan dropout mahasiswa dengan naive bayes dan decision tree": [
+    "123845297.techno.com.txt",
+    "90044164.techno.com.txt"
+  ],
+  "text mining ringkasan berita dengan recurrent neural network lstm dan word2vec": [
+    "96484460.techno.com.txt"
+  ]
+}

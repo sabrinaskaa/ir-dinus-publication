@@ -43,26 +43,44 @@ def build_inverted_index(docs):
 def parse_boolean_query(query, inverted_index):
     # Normalize the query (split by spaces and convert to lowercase)
     # print(query)
-    query_terms = query.lower().split()
-    
-    # Handling OR, AND, NOT operations
-    result_docs = set()
+    tokens = query.lower().split()
+    result_docs = None
+    current_op = None
     negate = False
+
     
-    for term in query_terms:
-        if term == "and":
+    all_docs = set()
+    for docs in inverted_index.values():
+        all_docs |= docs
+
+    for token in tokens:
+        if token == "and":
+            current_op = "and"
             continue
-        elif term == "or":
+        elif token == "or":
+            current_op = "or"
             continue
-        elif term == "not":
+        elif token == "not":
             negate = True
             continue
-        elif term in inverted_index:
-            term_docs = inverted_index[term]
-            if negate:
-                result_docs -= term_docs
-                negate = False
-            else:
+        # token adalah term biasa
+        term_docs = inverted_index.get(token, set())
+
+        # kalau ada NOT, komplement terhadap all_docs
+        if negate:
+            term_docs = all_docs - term_docs
+            negate = False
+
+        if result_docs is None:
+            # term pertama
+            result_docs = set(term_docs)
+        else:
+            if current_op == "and":
+                result_docs &= term_docs
+            elif current_op == "or" or current_op is None:
+                # default: OR jika operator tidak ditentukan
                 result_docs |= term_docs
-    
+
+    if result_docs is None:
+        return set()
     return result_docs
