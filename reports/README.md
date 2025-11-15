@@ -16,7 +16,8 @@ Struktur direktori (ringkas):
 ```text
 .
 ├─ app/
-│  └─ streamlit_deploy.py      # Aplikasi Streamlit
+│  ├─ streamlit_deploy.py      # Aplikasi Streamlit
+|  └─ main.py                  # CLI (menu di terminal)
 ├─ src/
 │  ├─ preprocess.py            # Preprocessing & tokenisasi
 │  ├─ boolean_ir.py            # Boolean IR (incidence matrix, inverted index, parser)
@@ -28,7 +29,6 @@ Struktur direktori (ringkas):
 │  └─ processed/               # Dokumen hasil preprocessing (.txt)
 ├─ reports/
 │  └─ metrics_comparison.png   # Plot evaluasi (otomatis dibuat)
-├─ main.py                     # CLI (menu di terminal)
 ├─ requirements.txt
 └─ README.md
 ```
