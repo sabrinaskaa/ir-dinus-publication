@@ -43,4 +43,4 @@ Jalankan di terminal `python app/main.py demo`
 
 ## 4. Website
 
-Dapat mengakses website juga di [text](https://sabrinaskaa-ir-uts.streamlit.app/)
+Dapat mengakses website juga di [https://sabrinaskaa-ir-uts.streamlit.app/](https://sabrinaskaa-ir-uts.streamlit.app/)
