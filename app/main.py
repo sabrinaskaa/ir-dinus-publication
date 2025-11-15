@@ -2,8 +2,7 @@ import os
 import sys
 import nltk
 
-# ===================== SETUP PATH =====================
-# BASE_DIR = folder root project (yang berisi folder 'app' dan 'src')
+# Setup path
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
@@ -21,7 +20,7 @@ from src.vsm_ir import (
 from src.search_engine import search as engine_search
 from src.eval import evaluate_all, plot_results
 
-# ===================== NLTK ===========================
+# NLTK
 nltk.download("punkt", quiet=True)
 try:
     nltk.download("punkt_tab", quiet=True)
@@ -32,25 +31,20 @@ nltk.download("stopwords", quiet=True)
 DATA_DIR = os.path.join(BASE_DIR, "data")
 PROCESSED_DIR = os.path.join(DATA_DIR, "processed")
 
+# Ulang Preprocess
+def re_preprocess():
+    print("\n=== MODE PREPROCESS ULANG ===")
+    preprocess_directory(DATA_DIR, PROCESSED_DIR)
 
-# ======================================================
-# 1. DEMO LAMA: BOOLEAN + VSM + METRIK (boleh kamu abaikan kalau mau)
-# ======================================================
-def demo_boolean_vsm():
-    print("\n=== DEMO BOOLEAN + VSM ===")
-
-    # kalau mau preprocessing ulang, buka komentar di bawah:
-    # preprocess_directory(DATA_DIR, PROCESSED_DIR)
-
-    # ----- siapkan dokumen terproses -----
+# BOOLEAN IR
+def demo_boolean():
+    print("\n=== MODE BOOLEAN IR ===")
     processed_docs = []
     for filename in os.listdir(PROCESSED_DIR):
         if filename.endswith(".txt"):
             path = os.path.join(PROCESSED_DIR, filename)
             with open(path, encoding="utf-8") as f:
                 processed_docs.append(f.read().strip())
-
-    # ----- BOOLEAN IR -----
     incidence_matrix, vocabulary = build_incidence_matrix(processed_docs)
     inverted_index = build_inverted_index(processed_docs)
 
@@ -60,11 +54,13 @@ def demo_boolean_vsm():
     print("Query  :", q_bool)
     print("Dokumen:", res_bool)
 
-    # ----- VSM -----
+# VSM
+def demo_vsm():
+    print("\n=== MODE VSM ===")
     docs, doc_ids = load_processed_docs(PROCESSED_DIR)
     vectorizer, tfidf_matrix = build_tfidf(docs)
 
-    q_vsm_raw = input("\nMasukkan query VSM (contoh: 'cardiovascular knn'): ")
+    q_vsm_raw = input("\nMasukkan query VSM: ")
     q_vsm = preprocess_text(q_vsm_raw)
     top_results = rank(q_vsm, docs, doc_ids, vectorizer, tfidf_matrix, k=5)
 
@@ -76,15 +72,12 @@ def demo_boolean_vsm():
     gold = ["137485529.techno.com.txt", "88974145.techno.com.txt"]
     retrieved = [r["doc_id"] for r in top_results]
 
-    print("\n=== METRIK EVAL (DEMO) ===")
+    print("\n=== METRIK EVAL ===")
     print("Precision@5:", precision_at_k(retrieved, gold, 5))
     print("MAP@5      :", average_precision(retrieved, gold, 5))
     print("nDCG@5     :", ndcg_at_k(retrieved, gold, 5))
 
-
-# ======================================================
-# 2. SEARCH ENGINE INTERAKTIF (BOOLEAN / VSM / BM25)
-# ======================================================
+# SEARCH ENGINE (BOOLEAN / VSM / BM25)
 def interactive_search():
     print("\n=== MODE SEARCH ENGINE ===")
     print(f"[INFO] Folder processed: {PROCESSED_DIR}")
@@ -145,10 +138,7 @@ def interactive_search():
                 print("    snippet  :", snippet[:160], "...")
             print()
 
-
-# ======================================================
-# 3. EVALUATION INTERAKTIF (PAKAI gold.json)
-# ======================================================
+# EVALUATION (Dengan gold.json)
 def interactive_eval():
     print("\n=== MODE EVALUATION ===")
     gold_path = os.path.join(DATA_DIR, "gold.json")
@@ -178,28 +168,33 @@ def interactive_eval():
         print(f"[WARN] Plot gagal dibuat: {e}")
 
 
-# ======================================================
 # MAIN MENU
-# ======================================================
 def main():
     while True:
-        print("\n====================================")
-        print("      STKI UTS - SEARCH ENGINE      ")
+        print("\nSabrina Aska Amalina - A11.2023.15264")
         print("====================================")
-        print("1. Demo Boolean + VSM (tugas awal)")
-        print("2. Search Engine (Boolean / VSM / BM25)")
-        print("3. Evaluation pakai gold.json")
+        print("       MINI PROJECT STKI UTS       ")
+        print("====================================")
+        print("1. Ulang Preprocessing")
+        print("2. Demo Boolean")
+        print("3. VSM")
+        print("4. Search Engine (Boolean / VSM / BM25)")
+        print("5. Evaluation pakai gold.json")
         print("0. Keluar")
-        choice = input("Pilih [0-3]: ").strip()
+        choice = input("Pilih [0-5]: ").strip()
 
         if choice == "1":
-            demo_boolean_vsm()
+            re_preprocess()
         elif choice == "2":
-            interactive_search()
+            demo_boolean()
         elif choice == "3":
+            demo_vsm()
+        elif choice == "4":
+            interactive_search()
+        elif choice == "5":
             interactive_eval()
         elif choice == "0":
-            print("Keluar.")
+            print("Selamat tinggal! 🤗")
             break
         else:
             print("Pilihan tidak dikenal, coba lagi.")
