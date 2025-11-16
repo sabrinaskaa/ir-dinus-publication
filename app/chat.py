@@ -28,6 +28,8 @@ from src.boolean_ir import (  # type: ignore
     build_incidence_matrix,
     build_inverted_index,
     parse_boolean_query,
+    explain_boolean_query,
+    precision_recall,
 )
 from src.vsm_ir import (  # type: ignore
     load_processed_docs,
@@ -217,7 +219,7 @@ def page_preprocess():
     )
 
 
-# ========== PAGE: DEMO BOOLEAN IR ==========
+# ========== PAGE: DEMO BOOLEAN IR (DISAMAKAN DENGAN main.py) ==========
 
 def page_boolean_demo():
     st.header("🧮 Boolean Retrieval Model Demo")
@@ -241,11 +243,22 @@ def page_boolean_demo():
 
     st.caption(
         "Contoh query Boolean:  \n"
-        "`cardiovascular AND knn`  \n"
+        "`indonesia AND cnn`  \n"
         "`(internet AND teknologi) OR keamanan NOT bisnis`"
     )
 
-    q_bool = st.text_input("Masukkan Boolean query:", value="cardiovascular AND knn")
+    q_bool = st.text_input("Masukkan Boolean query:", value="indonesia AND cnn")
+
+    st.markdown("#### (Opsional) Mini Truth Set untuk Precision/Recall")
+    st.write(
+        "Pilih dokumen yang menurut kamu **relevan** untuk query ini. "
+        "Ini akan dipakai sebagai *gold relevant docs* untuk menghitung precision & recall."
+    )
+    gold_selected = st.multiselect(
+        "Pilih gold relevant docs (berdasarkan nama file dokumen):",
+        options=doc_ids,
+    )
+
     run_demo = st.button("Jalankan Boolean Retrieval")
 
     if run_demo:
@@ -253,8 +266,9 @@ def page_boolean_demo():
             st.warning("Silakan masukkan Boolean query terlebih dahulu.")
             return
 
+        # Sama seperti demo_boolean() di main.py → pakai explain_boolean_query
         try:
-            res_bool = parse_boolean_query(q_bool, inverted_index)
+            result_docs, steps = explain_boolean_query(q_bool, inverted_index)
         except Exception as e:
             st.error(f"Gagal mem-parsing Boolean query: {e}")
             return
@@ -262,30 +276,69 @@ def page_boolean_demo():
         st.markdown("### Hasil Boolean IR")
         st.write(f"**Query:** `{q_bool}`")
 
-        # parse_boolean_query bisa mengembalikan index dokumen atau nama dokumen.
+        # result_docs adalah himpunan index dokumen (0-based)
         resolved_ids: List[str] = []
-        if isinstance(res_bool, (list, tuple, set)):
-            for item in res_bool:
-                if isinstance(item, int):
-                    if 0 <= item < len(doc_ids):
-                        resolved_ids.append(doc_ids[item])
-                else:
-                    resolved_ids.append(str(item))
-        else:
-            # kalau bukan list, anggap satu nilai saja
-            if isinstance(res_bool, int) and 0 <= res_bool < len(doc_ids):
-                resolved_ids.append(doc_ids[res_bool])
-            else:
-                resolved_ids.append(str(res_bool))
+        for d in sorted(result_docs):
+            if 0 <= d < len(doc_ids):
+                resolved_ids.append(doc_ids[d])
 
         if not resolved_ids:
             st.info("Tidak ada dokumen yang cocok dengan Boolean query.")
             return
 
         st.success(f"Jumlah dokumen cocok: **{len(resolved_ids)}**")
+
+        st.markdown("#### Daftar Dokumen Hasil")
         for did in resolved_ids:
             with st.expander(f"📄 {did}"):
                 st.code(load_original_doc(did), language="text")
+
+        # ----- Penjelasan langkah Boolean (interseksi / union / komplemen)
+        st.markdown("### Penjelasan Langkah Boolean (AND / OR / NOT)")
+        if not steps:
+            st.info("Tidak ada langkah yang bisa dijelaskan (query kosong?).")
+        else:
+            for i, stp in enumerate(steps, start=1):
+                term = stp["term"]
+                op = stp["op"]
+                used_not = stp["used_not"]
+                raw_docs = stp["raw_docs"]
+                docs_after_not = stp["docs_after_not"]
+                prev_result = stp["prev_result"]
+                new_result = stp["new_result"]
+
+                with st.expander(f"Langkah {i}: term '{term}'"):
+                    if used_not:
+                        st.write(f"NOT `{term}`: komplemen dari {raw_docs} → {docs_after_not}")
+                    else:
+                        st.write(f"Postings `{term}`: {raw_docs}")
+
+                    if op == "and":
+                        st.write("Operasi: **AND** (interseksi) dengan hasil sebelumnya.")
+                    elif op == "or":
+                        st.write("Operasi: **OR** (union) dengan hasil sebelumnya.")
+                    else:
+                        st.write("Operasi: **INIT / result awal** (belum ada kombinasi AND/OR).")
+
+                    if prev_result is not None:
+                        st.write(f"Hasil sebelum langkah ini: {prev_result}")
+                    st.write(f"Hasil sesudah langkah ini: {new_result}")
+
+        # ----- Precision & Recall seperti di main.demo_boolean()
+        if gold_selected:
+            gold_indices = [doc_ids.index(name) for name in gold_selected]
+            p, r = precision_recall(result_docs, gold_indices)
+
+            st.markdown("### Evaluasi Boolean Result Set (Mini Truth Set)")
+            st.write(f"Gold relevant docs (nama file): {', '.join(gold_selected)}")
+            c1, c2 = st.columns(2)
+            c1.metric("Precision", f"{p:.3f}")
+            c2.metric("Recall", f"{r:.3f}")
+        else:
+            st.info(
+                "Jika ingin menghitung precision/recall, pilih beberapa dokumen "
+                "sebagai gold relevant docs di atas."
+            )
 
 
 # ========== PAGE: DEMO VSM (VECTOR SPACE MODEL & RANKING) ==========
@@ -446,7 +499,7 @@ def page_search_engine():
                             try:
                                 parts.append(f"{t[0]}({float(t[1]):.3f})")
                             except Exception:
-                                parts.append(str(t[0]))
+                                parts.append(str(t))
                         else:
                             parts.append(str(t))
                     st.caption("Top terms: " + ", ".join(parts))

@@ -8,7 +8,11 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 from src.preprocess import preprocess_directory, preprocess_text
-from src.boolean_ir import build_incidence_matrix, build_inverted_index, parse_boolean_query
+from src.boolean_ir import (build_incidence_matrix,
+    build_inverted_index,
+    parse_boolean_query,
+    explain_boolean_query,
+    precision_recall)
 from src.vsm_ir import (
     load_processed_docs,
     build_tfidf,
@@ -39,20 +43,92 @@ def re_preprocess():
 # BOOLEAN IR
 def demo_boolean():
     print("\n=== MODE BOOLEAN IR ===")
+    # 1. Load dokumen ter-preprocess
     processed_docs = []
+    doc_ids = []  # simpan nama file supaya enak dibaca
     for filename in os.listdir(PROCESSED_DIR):
         if filename.endswith(".txt"):
             path = os.path.join(PROCESSED_DIR, filename)
             with open(path, encoding="utf-8") as f:
                 processed_docs.append(f.read().strip())
+            doc_ids.append(filename)
+
+    if not processed_docs:
+        print("[ERROR] Tidak ada dokumen di data/processed/. Jalankan preprocessing dulu.")
+        return
+    
+    # 2. Bangun incidence matrix & inverted index
     incidence_matrix, vocabulary = build_incidence_matrix(processed_docs)
     inverted_index = build_inverted_index(processed_docs)
 
-    q_bool = input("Masukkan Boolean query (contoh: 'cardiovascular AND knn'): ")
-    res_bool = parse_boolean_query(q_bool, inverted_index)
-    print("\n=== HASIL BOOLEAN IR ===")
-    print("Query  :", q_bool)
-    print("Dokumen:", res_bool)
+    print(f"Jumlah dokumen   : {len(processed_docs)}")
+    print(f"Ukuran vocabulary: {len(vocabulary)}")
+    print("Index sudah terbentuk (incidence matrix & inverted index).")
+    print("Masukkan Boolean query (AND / OR / NOT). Kosongkan untuk kembali ke menu.\n")
+
+    # 3. Loop untuk ≥ 3 query (user bisa mencoba berkali-kali)
+    while True:
+        q_bool = input("Masukkan Boolean query: ").strip()
+        if not q_bool:
+            break
+
+        # 4. Jalankan Boolean IR + explanation
+        result_docs, steps = explain_boolean_query(q_bool, inverted_index)
+
+        print("\n=== HASIL BOOLEAN IR ===")
+        print("Query :", q_bool)
+
+        if not result_docs:
+            print("-> Tidak ada dokumen yang cocok.")
+        else:
+            print("-> Daftar dokumen (id & nama file):")
+            for d in sorted(result_docs):
+                if 0 <= d < len(doc_ids):
+                    print(f"   - doc#{d} : {doc_ids[d]}")
+                else:
+                    print(f"   - doc#{d}")
+        # 5. Tampilkan penjelasan interseksi / union / komplemen
+        print("\n=== PENJELASAN LANGKAH BOOLEAN ===")
+        for i, stp in enumerate(steps, start=1):
+            term = stp["term"]
+            op = stp["op"]
+            used_not = stp["used_not"]
+            raw_docs = stp["raw_docs"]
+            docs_after_not = stp["docs_after_not"]
+            prev_result = stp["prev_result"]
+            new_result = stp["new_result"]
+
+            print(f"Langkah {i}:")
+            print(f"  Term      : '{term}'")
+            if used_not:
+                print(f"  NOT       : yes (komplemen dari {raw_docs} -> {docs_after_not})")
+            else:
+                print(f"  Postings  : {raw_docs}")
+            if op == "and":
+                print("  Operasi   : AND (interseksi) dengan result sebelumnya")
+            elif op == "or":
+                print("  Operasi   : OR  (union) dengan result sebelumnya")
+            else:
+                print("  Operasi   : INIT (result awal)")
+            if prev_result is not None:
+                print(f"  Sebelum   : {prev_result}")
+            print(f"  Sesudah   : {new_result}")
+            print()
+
+        # 6. Mini truth set: precision & recall
+        ans = input("Ingin hitung precision/recall untuk query ini? [y/n]: ").strip().lower()
+        if ans == "y":
+            print("Masukkan gold relevant docs sebagai index dokumen, pisahkan dengan koma.")
+            print("Contoh: 0, 3, 5  (lihat nomor doc# di daftar hasil di atas)")
+            gold_str = input("Gold relevant docs: ").strip()
+            if gold_str:
+                try:
+                    gold_ids = [int(x.strip()) for x in gold_str.split(",") if x.strip() != ""]
+                    p, r = precision_recall(result_docs, gold_ids)
+                    print(f"Precision : {p:.3f}")
+                    print(f"Recall    : {r:.3f}")
+                except ValueError:
+                    print("[WARN] Format gold docs tidak valid, lewati perhitungan.")
 
 # VSM
 def demo_vsm():

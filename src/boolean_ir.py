@@ -39,21 +39,24 @@ def build_inverted_index(docs):
     
     return inverted_index
 
-# Memproses query Boolean sederhana (AND, OR, NOT)
-def parse_boolean_query(query, inverted_index):
-    # Normalize the query (split by spaces and convert to lowercase)
-    # print(query)
+def _boolean_core(query, inverted_index, with_explain=False):
     tokens = query.lower().split()
     result_docs = None
-    current_op = None
+    current_op = None # 'and' / 'or'
     negate = False
 
-    
+    # himpunan semua dokumen (dipakai untuk operasi komplemen / NOT)
     all_docs = set()
     for docs in inverted_index.values():
         all_docs |= docs
 
+    steps = []
+
     for token in tokens:
+        if token in ("(", ")"):
+            # untuk menyederhanakan, parentheses diabaikan.
+            continue
+
         if token == "and":
             current_op = "and"
             continue
@@ -63,24 +66,65 @@ def parse_boolean_query(query, inverted_index):
         elif token == "not":
             negate = True
             continue
-        # token adalah term biasa
-        term_docs = inverted_index.get(token, set())
 
-        # kalau ada NOT, komplement terhadap all_docs
+        # token adalah term biasa
+        raw_docs = inverted_index.get(token, set())
+        term_docs = raw_docs
+
+        used_not = False
         if negate:
-            term_docs = all_docs - term_docs
+            term_docs = all_docs - raw_docs
             negate = False
+            used_not = True
 
         if result_docs is None:
-            # term pertama
-            result_docs = set(term_docs)
+            new_result = set(term_docs)
         else:
             if current_op == "and":
-                result_docs &= term_docs
-            elif current_op == "or" or current_op is None:
-                # default: OR jika operator tidak ditentukan
-                result_docs |= term_docs
+                new_result = result_docs & term_docs
+            else:
+                # default OR ketika operator belum diset
+                new_result = result_docs | term_docs
+
+        if with_explain:
+            steps.append({
+                "term": token,
+                "op": current_op if result_docs is not None else "INIT",
+                "used_not": used_not,
+                "raw_docs": sorted(raw_docs),
+                "docs_after_not": sorted(term_docs),
+                "prev_result": sorted(result_docs) if result_docs is not None else None,
+                "new_result": sorted(new_result),
+            })
+
+        result_docs = new_result
 
     if result_docs is None:
-        return set()
+        result_docs = set()
+
+    if with_explain:
+        return result_docs, steps
     return result_docs
+
+# Memproses query Boolean sederhana (AND, OR, NOT)
+def parse_boolean_query(query, inverted_index):
+    return _boolean_core(query, inverted_index, with_explain=False)
+
+def explain_boolean_query(query, inverted_index):
+    return _boolean_core(query, inverted_index, with_explain=True)
+
+def precision_recall(retrieved_docs, relevant_docs):
+    retrieved = set(retrieved_docs)
+    relevant = set(relevant_docs)
+
+    if not retrieved:
+        precision = 0.0
+    else:
+        precision = len(retrieved & relevant) / len(retrieved)
+
+    if not relevant:
+        recall = 0.0
+    else:
+        recall = len(retrieved & relevant) / len(relevant)
+
+    return precision, recall
