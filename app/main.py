@@ -64,11 +64,19 @@ def demo_boolean():
     print(f"Jumlah dokumen   : {len(processed_docs)}")
     print(f"Ukuran vocabulary: {len(vocabulary)}")
     print("Index sudah terbentuk (incidence matrix & inverted index).")
-    print("Masukkan Boolean query (AND / OR / NOT). Kosongkan untuk kembali ke menu.\n")
+    print("Masukkan Boolean query (AND / OR / NOT).")
+    print("Ketik 'exit', 'quit', atau 'keluar' untuk kembali ke menu.\n")
 
     # 3. Loop untuk ≥ 3 query (user bisa mencoba berkali-kali)
     while True:
         q_bool = input("Masukkan Boolean query: ").strip()
+
+        # === TAMBAHAN FITUR KELUAR ===
+        if q_bool.lower() in ["exit", "quit", "keluar"]:
+            print("Keluar dari mode Boolean IR...\n")
+            break
+        # =================================
+
         if not q_bool:
             break
 
@@ -87,6 +95,7 @@ def demo_boolean():
                     print(f"   - doc#{d} : {doc_ids[d]}")
                 else:
                     print(f"   - doc#{d}")
+
         # 5. Tampilkan penjelasan interseksi / union / komplemen
         print("\n=== PENJELASAN LANGKAH BOOLEAN ===")
         for i, stp in enumerate(steps, start=1):
@@ -129,6 +138,7 @@ def demo_boolean():
                     print(f"Recall    : {r:.3f}")
                 except ValueError:
                     print("[WARN] Format gold docs tidak valid, lewati perhitungan.")
+
 
 # VSM
 def demo_vsm():
