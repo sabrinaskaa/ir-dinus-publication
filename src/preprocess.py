@@ -6,10 +6,6 @@ from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
 
-# nltk.download('punkt', quiet=True)
-# nltk.download("punkt_tab", quiet=True)
-# nltk.download('stopwords', quiet=True)
-
 # Buat stemmer Bahasa Indonesia
 factory = StemmerFactory()
 stemmer = factory.create_stemmer()
@@ -73,10 +69,3 @@ def preprocess_directory(input_dir: str, output_dir: str):
             
             print(f"[OK] {filename} → {len(processed_tokens)} tokens")
     print(f"\n Semua file telah diproses dan disimpan di: {output_dir}")
-
-# if __name__ == "__main__":
-#     input_dir = os.path.join("data")
-#     output_dir = os.path.join("data", "processed")
-
-#     if os.path.exists(input_dir):
-#         preprocess_directory(input_dir, output_dir)
